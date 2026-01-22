@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let skillMetrics = {}; // Theo dõi điểm từng kỹ năng để AI phân tích
     
     // URL Google Apps Script (GIỮ NGUYÊN)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY1lyZTBZP_zpnSP3_6_fKo3NZZY21z1tCS1eJTPMGtJlCrgBJcr5CrBC77yxvDQrW/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXP6RuMGL72Hpl1t8aEkQW0QyWhlWtNcWlzIWjM-7u7LZ9WU39_N1MHp8rdC0CzSkf/exec';
 
     // ============================================================
     // --- CẤU HÌNH QUY ĐỔI ĐIỂM & KHÓA HỌC (DATA SETTINGS) ---
@@ -126,36 +126,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Hàm gửi dữ liệu lên Google Sheet
-    async function sendDataToGoogleSheet(data) {
-        if (!data) return;
-        
-        const formData = new FormData();
-        formData.append("fullname", data.full_name);
-        formData.append("school", data.school_name);
-        formData.append("phone", data.phone_number);
-        formData.append("email", data.email);
-        formData.append("score", data.score || 0);
-        formData.append("rank", data.rank || "");           
-        formData.append("skills", data.skill_breakdown || ""); 
-        formData.append("prize", data.prize_won || "");
-        
-        // Gộp nội dung bài viết thành chuỗi
-        const writingText = data.writing_responses ? data.writing_responses.join(" | ") : "";
-        formData.append("writing", writingText);
+  async function sendDataToGoogleSheet(data) {
+    if (!data) return;
+    
+    const formData = new FormData();
+    formData.append("fullname", data.full_name);
+    formData.append("school", data.school_name);
+    formData.append("phone", data.phone_number);
+    formData.append("email", data.email);
+    formData.append("score", data.score || 0);
+    formData.append("rank", data.rank || "");           
+    formData.append("skills", data.skill_breakdown || ""); 
+    formData.append("prize", data.prize_won || "");
+    
+    // Gộp nội dung bài viết thành chuỗi
+    const writingText = data.writing_responses ? data.writing_responses.join(" | ") : "";
+    formData.append("writing", writingText);
 
-        formData.append("consent", data.phone_consent ? "Có" : "Không");
+    formData.append("consent", data.phone_consent ? "Có" : "Không");
 
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: formData,
-                mode: 'no-cors' 
-            });
-            console.log("Đã gửi dữ liệu lên Sheet!");
-        } catch (error) {
-            console.error("Lỗi gửi dữ liệu:", error);
-        }
+    // 👉 BỔ SUNG FIELD CHO BIZFLY
+    formData.append("qr_code", window.location.href);
+    formData.append("value", "Zalo MiniApp Quiz");
+    formData.append("ghi_chu", `Quiz score: ${data.score || 0}, Prize: ${data.prize_won || "Không có"}`);
+
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: formData,
+            mode: 'no-cors' 
+        });
+        console.log("Đã gửi dữ liệu lên Sheet & Bizfly!");
+    } catch (error) {
+        console.error("Lỗi gửi dữ liệu:", error);
     }
+}
+
 
     // --- CẤU HÌNH LƯU TRỮ (LOCAL STORAGE) ---
     const STORAGE_KEY = 'quiz_user_session_v5'; // Bump version
@@ -684,11 +690,7 @@ function renderQuestion() {
     // -----------------------------------------------------------
     // 🔥 TÍCH HỢP BIZFLY WEBHOOK TẠI ĐÂY
     // -----------------------------------------------------------
-    if (window.sendToBizfly) {
-        console.log("Đang gửi dữ liệu sang Bizfly...");
-        // Gửi điểm + Ngôn ngữ thi sang CRM
-        window.sendToBizfly(score, currentLang);
-    }
+   
     // -----------------------------------------------------------
 
     // 4. Render AI Report Card (Thẻ báo cáo AI)
