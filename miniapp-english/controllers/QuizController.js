@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let skillMetrics = {}; // Theo dõi điểm từng kỹ năng để AI phân tích
     
     // URL Google Apps Script (GIỮ NGUYÊN)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp-10XFj0WllIsJO9y08qt4fq6UpnaHYO44YDRrxJTLYafdk2YoSYtxBJWAtt6o50R/exec';
-
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCLrToGxGoTz2D7FnSQdjDfJvl-PSjnWrlHItVgP5DXj0wVWcCY5pTU-0QiHM14AXp/exec';
+// Copy toàn bộ URL từ Postman dán vào đây
     // ============================================================
     // --- CẤU HÌNH QUY ĐỔI ĐIỂM & KHÓA HỌC (DATA SETTINGS) ---
     // ============================================================
@@ -126,43 +126,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Hàm gửi dữ liệu lên Google Sheet
+// 3. Hàm gửi dữ liệu (SỬA ĐỔI)
+// 3. Hàm gửi dữ liệu (Bản chuẩn cho GAS trung gian)
 async function sendDataToGoogleSheet(data) {
   if (!data) return;
   
   const formData = new FormData();
 
-  // --- FIELD BIZFLY ---
-  formData.append("id", Date.now()); // hoặc để trống nếu không bắt buộc
-  formData.append("phone", data.phone_number);
-  formData.append("email", data.email);
-  formData.append("school_name", data.school_name);
+  // Mapping dữ liệu chính xác để GAS có thể nhận p.fullname, p.phone...
+  formData.append("fullname", data.full_name || "");
+  formData.append("phone", data.phone_number || "");
+  formData.append("email", data.email || "");
+  formData.append("school_name", data.school_name || "");
   formData.append("score", data.score || 0);
   formData.append("qr_code", window.location.href);
-  formData.append("value", "Zalo MiniApp Quiz");
-  formData.append("thoi_gian", new Date().toISOString());
-  formData.append("ghi_chu", `Điểm: ${data.score || 0} | Quà: ${data.prize_won || "Không có"}`);
+  formData.append("value", "Zalo MiniApp");
+  
+  // Gửi thêm thông tin ngôn ngữ và cấp độ
+  formData.append("language", data.language || ""); 
+  formData.append("level", data.level || "");
 
-  // --- FIELD GOOGLE SHEET (GIỮ LẠI NẾU CẦN) ---
-  formData.append("fullname", data.full_name);
-  formData.append("rank", data.rank || "");
-  formData.append("skills", data.skill_breakdown || "");
-  const writingText = data.writing_responses ? data.writing_responses.join(" | ") : "";
-  formData.append("writing", writingText);
-  formData.append("consent", data.phone_consent ? "Có" : "Không");
+  // Ghi chú cơ bản (GAS sẽ tự tối ưu lại ghi chú này khi gửi sang Bizfly)
+  formData.append("ghi_chu", `Prize: ${data.prize_won || "None"}`);
+  
+  // Nếu có bài viết tự luận, gửi kèm để AI chấm
+  if (data.writing_responses && data.writing_responses.length > 0) {
+      formData.append("writing", data.writing_responses.join(" | "));
+  }
 
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       body: formData,
-      mode: 'no-cors'
+      mode: 'no-cors' 
     });
-    console.log("✅ Đã gửi dữ liệu lên Sheet & Bizfly!");
+    console.log("✅ Dữ liệu đã được đẩy lên GAS trung chuyển.");
   } catch (error) {
     console.error("❌ Lỗi gửi dữ liệu:", error);
   }
 }
-
-
 
     // --- CẤU HÌNH LƯU TRỮ (LOCAL STORAGE) ---
     const STORAGE_KEY = 'quiz_user_session_v5'; // Bump version
@@ -269,13 +271,13 @@ async function sendDataToGoogleSheet(data) {
             };
             
             saveSession(participantData);
-            await sendDataToGoogleSheet(participantData);
-            
+            await sendDataToGoogleSheet(participantData);       
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             showScreen('language'); 
         });
     }
+
 
     // 3. CÁC NÚT CHỌN NGÔN NGỮ
     const langButtons = document.querySelectorAll('.lang-btn');
@@ -973,4 +975,51 @@ function renderQuestion() {
     }
 
     initDataSDK();
+   
+});
+document.addEventListener('DOMContentLoaded', () => {
+    // Xử lý nút Messenger mở Fanpage trực tiếp (Không qua OA)
+    const messengerBtn = document.getElementById('messenger-btn');
+    if (messengerBtn) {
+        messengerBtn.addEventListener('click', () => {
+            // Mở link Messenger web trực tiếp
+            const messengerUrl = "https://m.me/100083047195100";
+            
+            // Nếu đang trong Zalo Mini App, ưu tiên dùng Webview của Zalo để mượt hơn
+            if (window.zmpSdk && window.zmpSdk.openWebview) {
+                window.zmpSdk.openWebview({
+                    url: messengerUrl,
+                    config: { style: "bottomSheet" }
+                });
+            } else {
+                // Nếu chạy trên trình duyệt thường (localhost), mở tab mới
+                window.open(messengerUrl, "_blank");
+            }
+        });
+    }
+});
+document.addEventListener('DOMContentLoaded', () => {
+    const zaloOABtn = document.getElementById('zalo-oa-btn');
+    
+    if (zaloOABtn) {
+        zaloOABtn.addEventListener('click', async () => {
+            const oaId = "2112176407138597287";
+            
+            if (window.zmpSdk) {
+                try {
+                    // Mở cửa sổ chat với OA bằng API của Zalo Mini App SDK
+                    await window.zmpSdk.openChat({
+                        type: 'oa',
+                        id: oaId
+                    });
+                } catch (error) {
+                    // Phương án dự phòng mở qua trình duyệt web
+                    window.open(`https://zalo.me/${oaId}`, "_blank");
+                }
+            } else {
+                // Môi trường trình duyệt PC
+                window.open(`https://zalo.me/${oaId}`, "_blank");
+            }
+        });
+    }
 });
