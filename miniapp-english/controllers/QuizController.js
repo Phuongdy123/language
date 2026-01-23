@@ -158,7 +158,7 @@ async function sendDataToGoogleSheet(data) {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       body: formData,
-      mode: 'no-cors' 
+      mode: 'cors' 
     });
     console.log("✅ Dữ liệu đã được đẩy lên GAS trung chuyển.");
   } catch (error) {
