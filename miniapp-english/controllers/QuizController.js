@@ -158,7 +158,6 @@ async function sendDataToGoogleSheet(data) {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       body: formData,
-       
     });
     console.log("✅ Dữ liệu đã được đẩy lên GAS trung chuyển.");
   } catch (error) {
@@ -976,50 +975,4 @@ function renderQuestion() {
 
     initDataSDK();
    
-});
-document.addEventListener('DOMContentLoaded', () => {
-    // Xử lý nút Messenger mở Fanpage trực tiếp (Không qua OA)
-    const messengerBtn = document.getElementById('messenger-btn');
-    if (messengerBtn) {
-        messengerBtn.addEventListener('click', () => {
-            // Mở link Messenger web trực tiếp
-            const messengerUrl = "https://m.me/100083047195100";
-            
-            // Nếu đang trong Zalo Mini App, ưu tiên dùng Webview của Zalo để mượt hơn
-            if (window.zmpSdk && window.zmpSdk.openWebview) {
-                window.zmpSdk.openWebview({
-                    url: messengerUrl,
-                    config: { style: "bottomSheet" }
-                });
-            } else {
-                // Nếu chạy trên trình duyệt thường (localhost), mở tab mới
-                window.open(messengerUrl, "_blank");
-            }
-        });
-    }
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const zaloOABtn = document.getElementById('zalo-oa-btn');
-    
-    if (zaloOABtn) {
-        zaloOABtn.addEventListener('click', async () => {
-            const oaId = "2112176407138597287";
-            
-            if (window.zmpSdk) {
-                try {
-                    // Mở cửa sổ chat với OA bằng API của Zalo Mini App SDK
-                    await window.zmpSdk.openChat({
-                        type: 'oa',
-                        id: oaId
-                    });
-                } catch (error) {
-                    // Phương án dự phòng mở qua trình duyệt web
-                    window.open(`https://zalo.me/${oaId}`, "_blank");
-                }
-            } else {
-                // Môi trường trình duyệt PC
-                window.open(`https://zalo.me/${oaId}`, "_blank");
-            }
-        });
-    }
 });
