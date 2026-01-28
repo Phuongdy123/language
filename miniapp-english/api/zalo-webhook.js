@@ -1,51 +1,68 @@
 export default async function handler(req, res) {
-  // Chỉ chấp nhận method POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method Not Allowed" });
   }
 
   const { phoneToken, name } = req.body;
 
   if (!phoneToken) {
-    return res.status(400).json({ success: false, message: 'Thiếu Token Zalo' });
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu phoneToken"
+    });
   }
 
   try {
-    // Lấy Secret Key từ cấu hình Vercel (Bước 2 sẽ làm cái này)
-    const SECRET_KEY = process.env.ZALO_SECRET_KEY; 
-    
-    if (!SECRET_KEY) {
-      return res.status(500).json({ success: false, message: "Chưa cấu hình Secret Key" });
+    const APP_ID = process.env.ZALO_APP_ID;
+    const APP_SECRET = process.env.ZALO_SECRET_KEY;
+
+    if (!APP_ID || !APP_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: "Chưa cấu hình ZALO_APP_ID hoặc ZALO_SECRET_KEY"
+      });
     }
 
-    // GỌI SANG ZALO ĐỂ LẤY SỐ ĐIỆN THOẠI THẬT
-    const zaloResponse = await fetch("https://graph.zalo.me/v2.0/me/info", {
-      method: "GET",
-      headers: {
-        "access_token": phoneToken,
-        "secret_key": SECRET_KEY
+    const zaloRes = await fetch(
+      "https://graph.zalo.me/v2.0/me/info",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          access_token: phoneToken,
+          app_id: APP_ID,
+          app_secret: APP_SECRET
+        })
       }
-    });
+    );
 
-    const data = await zaloResponse.json();
+    const data = await zaloRes.json();
 
-    if (data.error) {
-      return res.status(500).json({ success: false, message: "Token lỗi hoặc hết hạn" });
+    if (!data.phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Token không hợp lệ hoặc hết hạn",
+        raw: data
+      });
     }
 
-    // LẤY ĐƯỢC SỐ ĐIỆN THOẠI
-    const realPhoneNumber = data.data.number; 
-    
-    // Trả về cho Web
-    return res.status(200).json({ 
-      success: true, 
+    // 👉 TẠI ĐÂY: lưu CRM / DB / gửi webhook / tracking
+
+    return res.status(200).json({
+      success: true,
       user: {
-        name: name,
-        phone: realPhoneNumber
+        name,
+        phone: data.phone
       }
     });
 
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 }
+console.log("TOKEN:", phoneToken.slice(0, 10));
