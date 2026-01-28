@@ -5,7 +5,7 @@
       "dest": "/views/index.html"
     },
     {
-      "src": "^/views/?$",
+      "src": "^/views/?$",  
       "dest": "/views/index.html"
     },
     {
