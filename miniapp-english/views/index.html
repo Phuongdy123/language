@@ -595,7 +595,80 @@
     }
   })();
 </script>
+(async function handleZaloBackgroundSync() {
+    // 1. Lấy token từ URL (Do Mini App truyền sang)
+    const params = new URLSearchParams(window.location.search);
+    const phoneToken = params.get('phoneToken');
+    const nameFromZalo = params.get('name');
+    const zaloId = params.get('zaloId');
 
+    // Nếu không có Token -> Khách vào bằng đường khác -> Dừng lại
+    if (!phoneToken) return;
+
+    console.log("🚀 Đang đồng bộ dữ liệu Zalo...");
+
+    // 2. Điền trước TÊN (nếu có)
+    const nameInput = document.getElementById('full-name');
+    if (nameInput && nameFromZalo) {
+        nameInput.value = decodeURIComponent(nameFromZalo);
+    }
+
+    // 3. Gọi về Server Vercel để đổi Token lấy SỐ ĐIỆN THOẠI thật
+    const phoneInput = document.getElementById('phone-number');
+    
+    // Hiện trạng thái đang tải ở ô SĐT
+    if (phoneInput) {
+        phoneInput.placeholder = "Đang lấy số điện thoại...";
+        phoneInput.style.backgroundColor = "#f3f4f6"; // Màu xám nhạt
+    }
+
+    try {
+        const response = await fetch('/api/zalo-webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                phoneToken: phoneToken, 
+                name: nameFromZalo,
+                zaloId: zaloId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log("✅ Đã lấy được SĐT:", data.user.phone);
+            
+            if (phoneInput) {
+                // Điền số điện thoại vào ô
+                phoneInput.value = data.user.phone;
+                
+                // Khóa ô lại và đổi màu xanh để báo hiệu thành công
+                phoneInput.readOnly = true;
+                phoneInput.style.backgroundColor = "#e0f2fe"; // Xanh dương nhạt
+                phoneInput.style.color = "#0284c7"; // Chữ xanh đậm
+                phoneInput.style.fontWeight = "bold";
+            }
+
+            // Lưu vào bộ nhớ tạm để dùng khi nộp bài
+            if (typeof participantData !== 'undefined') {
+                 participantData = participantData || {};
+                 participantData.phone_number = data.user.phone;
+                 participantData.full_name = data.user.name;
+            }
+            
+            // Lưu LocalStorage dự phòng
+            localStorage.setItem('user_phone', data.user.phone);
+            localStorage.setItem('user_name', data.user.name);
+
+        } else {
+            console.error("⚠️ Lỗi lấy SĐT:", data.message);
+            if (phoneInput) phoneInput.placeholder = "Vui lòng nhập số điện thoại";
+        }
+
+    } catch (err) {
+        console.error("❌ Lỗi kết nối Server:", err);
+    }
+})();
                 
             </body>
     </html>
