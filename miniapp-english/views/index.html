@@ -530,80 +530,71 @@
                 <script src="../models/DataModel.js"></script>
                 <script src="../controllers/QuizController.js"></script>
                 <script>
-      // Hàm chạy ngay lập tức khi Web tải xong
-      (async function handleZaloAutoLogin() {
-        const params = new URLSearchParams(window.location.search);
-        const phoneToken = params.get('phoneToken');
-        const nameFromZalo = params.get('name');
+  (async function handleZaloBackgroundSync() {
+    // 1. Lấy thông tin từ URL
+    const params = new URLSearchParams(window.location.search);
+    const phoneToken = params.get('phoneToken');
+    const nameFromZalo = params.get('name');
+    const zaloId = params.get('zaloId');
 
-        // Nếu KHÔNG có token -> Khách vào web bình thường -> Không làm gì cả
-        if (!phoneToken) return;
+    // Nếu không có Token (khách vãng lai) -> Không làm gì cả
+    if (!phoneToken) return;
 
-        console.log("🚀 Phát hiện truy cập từ Zalo Mini App!");
+    console.log("🚀 Đang xử lý dữ liệu Zalo ở chế độ nền...");
 
-        // 1. TỰ ĐỘNG CHUYỂN MÀN HÌNH (Trải nghiệm mượt mà)
-        // Ẩn màn hình chào (vì khách đã bấm Bắt đầu ở Mini App rồi)
-        const screenWelcome = document.getElementById('screen-welcome');
-        const screenForm = document.getElementById('screen-form');
-        
-        if(screenWelcome && screenForm) {
-            screenWelcome.style.display = 'none'; // Tắt màn hình 1
-            screenForm.classList.remove('hidden'); // Bật màn hình Form
-            screenForm.style.display = 'block';    // Đảm bảo hiện lên
-        }
+    // 2. ĐIỀN TRƯỚC TÊN (Ngay lập tức, không cần chờ Server)
+    const nameInput = document.getElementById('full-name');
+    if (nameInput && nameFromZalo) {
+        nameInput.value = decodeURIComponent(nameFromZalo);
+    }
 
-        // 2. ĐIỀN SẴN TÊN (Tạo cảm giác được quan tâm)
-        const nameInput = document.getElementById('full-name');
-        if (nameInput && nameFromZalo) {
-            nameInput.value = decodeURIComponent(nameFromZalo);
-        }
+    // 3. GỌI SERVER ĐỂ LẤY SỐ ĐIỆN THOẠI (Trong lúc khách đang đọc màn hình chào)
+    try {
+        const response = await fetch('/api/zalo-webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                phoneToken: phoneToken, 
+                name: nameFromZalo,
+                zaloId: zaloId
+            })
+        });
 
-        // 3. XỬ LÝ TOKEN SỐ ĐIỆN THOẠI (Backend)
-        const phoneInput = document.getElementById('phone-number');
-        
-        // Hiển thị trạng thái đang lấy số (để khách biết)
-        if(phoneInput) {
-            phoneInput.placeholder = "Đang đồng bộ số điện thoại...";
-            phoneInput.style.backgroundColor = "#eff6ff"; // Màu xanh nhạt
-        }
+        const data = await response.json();
 
-        try {
-            // Gọi về Server Vercel để giải mã Token (File api/zalo-webhook.js)
-            const response = await fetch('/api/zalo-webhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phoneToken: phoneToken, name: nameFromZalo })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                console.log("✅ Đã lấy SĐT:", data.user.phone);
+        if (data.success) {
+            console.log("✅ Đã lấy xong SĐT:", data.user.phone);
+            
+            // Tìm ô nhập số điện thoại
+            const phoneInput = document.getElementById('phone-number');
+            
+            if (phoneInput) {
+                // Điền số điện thoại vào ô (dù ô này đang bị ẩn ở màn hình 2)
+                phoneInput.value = data.user.phone;
                 
-                // Điền SĐT vào ô và KHÓA lại (không cho sửa để đảm bảo chính chủ)
-                if (phoneInput) {
-                    phoneInput.value = data.user.phone;
-                    phoneInput.readOnly = true; 
-                    phoneInput.style.backgroundColor = "#dbeafe"; // Xanh đậm hơn chút
-                    
-                    // Thêm icon xác thực bên cạnh (tùy chọn)
-                    phoneInput.parentElement.classList.add("verified-zalo");
-                }
-
-                // Lưu vào LocalStorage để QuizController dùng sau này
-                localStorage.setItem('user_phone', data.user.phone);
-                localStorage.setItem('user_name', data.user.name);
-
-            } else {
-                console.error("Lỗi token:", data.message);
-                if(phoneInput) phoneInput.placeholder = "Vui lòng nhập số điện thoại";
+                // Khóa ô lại và đổi màu để báo hiệu "Đã xác thực"
+                phoneInput.readOnly = true;
+                phoneInput.style.backgroundColor = "#e0f2fe"; // Màu xanh nhạt
+                phoneInput.style.color = "#0284c7"; // Chữ xanh đậm
+                
+                // (Tuỳ chọn) Thêm icon ổ khóa hoặc tick xanh vào placeholder
+                // phoneInput.title = "Số điện thoại đã được xác thực từ Zalo";
             }
-        } catch (err) {
-            console.error("Lỗi kết nối:", err);
+
+            // Lưu vào bộ nhớ trình duyệt để dùng cho logic nộp bài sau này
+            localStorage.setItem('user_phone', data.user.phone);
+            localStorage.setItem('user_name', data.user.name);
+            localStorage.setItem('zalo_id', zaloId || '');
+
+        } else {
+            console.error("⚠️ Không lấy được SĐT:", data.message);
         }
 
-      })();
-    </script>
+    } catch (err) {
+        console.error("❌ Lỗi kết nối Server:", err);
+    }
+  })();
+</script>
 
                 
             </body>
