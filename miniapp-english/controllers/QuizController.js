@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let skillMetrics = {}; // Theo dõi điểm từng kỹ năng để AI phân tích
     
     // URL Google Apps Script (GIỮ NGUYÊN)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXokvWixG2y_lutelDYtIZsnRCPbirkLgOrGVKcRejod178j4RSQmRpHMwxwy2fK9_/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxw-AvIsJHZ6xOVMLRdSaU9nOaSR1dRnJL9C-cePmaWFAKOY1TP4kQCjA-e-ktfao7u/exec';
 // Copy toàn bộ URL từ Postman dán vào đây
     // ============================================================
     // --- CẤU HÌNH QUY ĐỔI ĐIỂM & KHÓA HỌC (DATA SETTINGS) ---
@@ -134,6 +134,7 @@ async function sendDataToGoogleSheet(data) {
   const formData = new FormData();
 
   // Mapping dữ liệu chính xác để GAS có thể nhận p.fullname, p.phone...
+  formData.append("zalo_user_id", data.zalo_user_id || "");
   formData.append("fullname", data.full_name || "");
   formData.append("phone", data.phone_number || "");
   formData.append("email", data.email || "");
@@ -255,6 +256,7 @@ async function sendDataToGoogleSheet(data) {
             }
             
             participantData = {
+                zalo_user_id: zaloId,
                 full_name: fullName,
                 school_name: schoolName,
                 phone_number: phoneNumber,
