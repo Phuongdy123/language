@@ -21,10 +21,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, raw: data });
     }
 
-    return res.status(200).json({
-      success: true,
-      phone: data.data.number
-    });
+   return res.status(200).json({
+  success: true,
+  user: { phone: data.data.number } // Thêm object user để khớp với HomePage.js
+});
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

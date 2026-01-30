@@ -30,16 +30,3 @@ export default async function handler(req, res) {
   }
 }
 
-// Hàm phụ để đẩy log sự kiện lên Google Sheet (Tương tự hàm sendDataToGoogleSheet của bạn)
-async function sendWebhookLogToSheet(logData) {
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/.../exec';
-  const formData = new FormData();
-  formData.append("value", "Zalo Webhook Event");
-  formData.append("ghi_chu", `${logData.event}: ${logData.user_id} - ${logData.note}`);
-  
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData });
-  } catch (e) {
-    console.error("Lỗi log webhook:", e);
-  }
-} 
