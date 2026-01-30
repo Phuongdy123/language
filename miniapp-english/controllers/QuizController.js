@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let skillMetrics = {}; // Theo dõi điểm từng kỹ năng để AI phân tích
     
     // URL Google Apps Script (GIỮ NGUYÊN)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCLrToGxGoTz2D7FnSQdjDfJvl-PSjnWrlHItVgP5DXj0wVWcCY5pTU-0QiHM14AXp/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXokvWixG2y_lutelDYtIZsnRCPbirkLgOrGVKcRejod178j4RSQmRpHMwxwy2fK9_/exec';
 // Copy toàn bộ URL từ Postman dán vào đây
     // ============================================================
     // --- CẤU HÌNH QUY ĐỔI ĐIỂM & KHÓA HỌC (DATA SETTINGS) ---
