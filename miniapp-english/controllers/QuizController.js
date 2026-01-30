@@ -241,8 +241,7 @@ async function sendDataToGoogleSheet(data) {
             
             submitBtn.innerHTML = 'Đang xử lý... ⏳';
             submitBtn.disabled = true;
-let customId = 'user-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            const fullName = document.getElementById('full-name').value.trim();
+let customId = Date.now() + Math.floor(Math.random() * 900 + 100);            const fullName = document.getElementById('full-name').value.trim();
             const schoolName = document.getElementById('school-name').value.trim();
             const phoneNumber = document.getElementById('phone-number').value.trim();
             const email = document.getElementById('user-email').value.trim();
