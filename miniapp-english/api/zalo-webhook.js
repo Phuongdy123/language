@@ -1,30 +1,20 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ message: "Method Not Allowed" });
-
-  const { phoneToken } = req.body;
-  const SECRET_KEY = process.env.ZALO_SECRET_KEY;
+  // Zalo Webhook gửi dữ liệu qua phương thức POST
+  if (req.method !== "POST") return res.status(405).end();
 
   try {
-    const zaloRes = await fetch("https://graph.zalo.me/v2.0/me/info-by-access-token", {
-      method: "GET",
-      headers: {
-        "secret_key": SECRET_KEY,
-        "token": phoneToken // Đây là token từ getPhoneNumber gửi lên
-      }
-    });
+    const { event_name, user_id, timestamp } = req.body;
 
-    const data = await zaloRes.json();
-
-    if (data.error) {
-      return res.status(400).json({ success: false, message: data.message, raw: data });
+    // Xử lý sự kiện người dùng rút quyền dữ liệu hoặc xóa app
+    if (event_name === "user_pdl_revoke") {
+      console.log(`Người dùng ${user_id} đã yêu cầu xóa dữ liệu lúc ${timestamp}`);
+      // Thực hiện logic xóa user khỏi database của bạn tại đây
     }
 
-    return res.status(200).json({
-      success: true,
-      user: { phone: data.data.number } // Zalo trả về number trong object data
-    });
+    // Luôn trả về 200 nhanh nhất có thể để xác nhận với Zalo
+    return res.status(200).json({ processed: true });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error("Webhook Error:", err.message);
+    return res.status(200).send("OK"); // Vẫn trả về 200 để tránh Zalo retry liên tục
   }
 }
-console.log("TOKEN:", phoneToken.slice(0, 10));
